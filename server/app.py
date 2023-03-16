@@ -50,35 +50,53 @@ class Newsletters(Resource):
         
         new_record = Newsletter(
             title=request.form['title'],
-            body=request.form['body'],
+            body=request.form['body']
+            # title=request.get_json()['title'],
+            # body=request.get_json()['body']
         )
 
         db.session.add(new_record)
         db.session.commit()
-
         response_dict = new_record.to_dict()
-
-        response = make_response(
-            response_dict,
-            201,
-        )
-
+        response = make_response(response_dict, 201,)
         return response
 
 api.add_resource(Newsletters, '/newsletters')
 
+
 class NewsletterByID(Resource):
 
     def get(self, id):
-
         response_dict = Newsletter.query.filter_by(id=id).first().to_dict()
-
         response = make_response(
             response_dict,
             200,
         )
-
         return response
+    
+
+    # 1. add a patch route
+    def patch(self, id):
+        newsletter = Newsletter.query.filter_by(id=id).first()
+        for attr in request.get_json():
+            setattr(newsletter, attr, request.get_json()[attr])
+        # for attr in request.form:
+        #     setattr(newsletter, attr, request.form.get(attr))
+        db.session.add(newsletter)
+        db.session.commit()
+        response = make_response(newsletter.to_dict(), 200)
+        return response
+    
+    # 2. add a delete route
+    def delete(self, id):
+        newsletter = Newsletter.query.filter_by(id=id).first()
+        db.session.delete(newsletter)
+        db.session.commit()
+
+        response_dict = {"message": "This record has been deleted successfully"}
+        response = make_response(response_dict, 200)
+        return response
+
 
 api.add_resource(NewsletterByID, '/newsletters/<int:id>')
 
